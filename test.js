@@ -19,3 +19,5 @@ app.get("/about", function(request, response){
 app.get("*", function(request, response){
 	response.end("404!");
 });
+
+http.createServer(app).listen(3000);
