@@ -4,6 +4,8 @@ var OS = require('os');
 var _ = require('underscore');
 
 
+var APIServer = require('../lib/api/APIServer').APIServer;
+
 var Workers_Ready = {};
 var Dead_Workers = [];
 var Worker_Info = {};
@@ -13,15 +15,43 @@ var dont_spawn_new_workers = false;
 if (Cluster.isMaster) {
 	console.log('master is starting...');
 	start_workers();
+
+	// Listen to signals sent to the master cluster process and handle appropriately
+	//
+	// SIGTERM (kill) - do a clean shutdown
+	process.on('SIGTERM', function(){
+		console.log("Got SIGTERM");
+		dont_spawn_new_workers = true;
+
+		for (let id in Cluster.workers) {
+			Cluster.workers[id].send({shutdown: true});
+			Cluster.workers[id].disconnect();
+		}
+	});
 }
 else {
-	console.log('slave is starting...');
+	console.log('slave is starting..., process id ' + process.id);
+	var api_server = new APIServer();
+	console.log('starting instance...');
+
+	let time_to_start = 30000;
+	let start_up_timeout = setTimeout(() => {
+		console.warn(`Worker was unable to start in ${time_to_start}ms`);
+		process.exit(1);
+	}, time_to_start).unref();
+
+	api_server.start(() => {
+		clearTimeout(start_up_timeout);
+		start_up_timeout = null;
+	});
+
+	global.Api = api_server;
 }
 
 
 function start_workers() {
 	console.log('API server starting up...');
-	var num_CPUs = OS.cpus().length;
+	var num_CPUs = 1; //OS.cpus().length;
 	console.log(num_CPUs + ' CPUs discored, forking instances...');
 	for (var index = 0; index < num_CPUs; index++) {
 		// specifically identify the first instance
@@ -79,6 +109,8 @@ function start_workers() {
 			sequence_number: worker_info.sequence_number,
 			num_workers: num_CPUs,
 		};
+
+		console.log('send message after worker online, message: ' + JSON.stringify(message));
 		if (Dead_Workers.length > 0) {
 			_.extend(message, Dead_Workers.shift());
 		}
@@ -88,6 +120,7 @@ function start_workers() {
 		}
 
 		worker.on('message', function(message){
+			console.log('receive message:' + JSON.stringify(message));
 			if (message.ready) {
 				if (Workers_Ready) {
 					Workers_Ready[message.id] = true;
