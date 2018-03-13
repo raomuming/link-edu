@@ -51,7 +51,7 @@ else {
 
 function start_workers() {
 	console.log('API server starting up...');
-	var num_CPUs = 1; //OS.cpus().length;
+	var num_CPUs = OS.cpus().length;
 	console.log(num_CPUs + ' CPUs discored, forking instances...');
 	for (var index = 0; index < num_CPUs; index++) {
 		// specifically identify the first instance
