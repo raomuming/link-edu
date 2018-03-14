@@ -1,0 +1,10 @@
+{
+	"db" : {
+		"uri" : "mongodb://localhost/test",
+		"options" : {
+			"user" : "",
+			"pass" : "",
+			"keepAlive" : 1
+		}
+	}
+}
