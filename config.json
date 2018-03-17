@@ -6,5 +6,7 @@
 			"pass" : "",
 			"keepAlive" : 1
 		}
-	}
+	},
+	"appid" : "wx577c587e3ea2cbd5",
+	"appsecret": "0877e82b6c7edb5aba028cb0342112d6"
 }
